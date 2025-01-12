@@ -8,10 +8,10 @@ import {
 } from "@/shared/kit/dialog";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
-import { Post } from "../model/types";
 import { useAppDispatch } from "@/app/_providers/StoreProvider/config/hooks";
-import { postRemoved } from "../model/slice";
 import { redirect } from "next/navigation";
+import { postRemoved } from "@/entities/post/model/slice";
+import { Post } from "@/entities/post/model/types";
 
 interface SinglePostButtonsProps {
   post: Post;

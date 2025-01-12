@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/kit/card";
 import Link from "next/link";
-import { Post } from "../model/types";
+import { Post } from "../../../entities/post/model/types";
 import PostAuthor from "./PostAuthor";
 
 interface PostItemProps {

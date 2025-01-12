@@ -1,9 +1,9 @@
 "use client";
 
-import { PostList } from "@/entities/post/ui/PostList";
-import AddPostForm from "@/entities/post/ui/AddPostForm";
 import { useAppSelector } from "../_providers/StoreProvider/config/hooks";
 import SignInForm from "@/features/auth/ui/SignInForm";
+import AddPostForm from "@/features/post/ui/AddPostForm";
+import { PostList } from "@/features/post/ui/PostList";
 
 export default function Posts() {
   const username = useAppSelector((state) => state.auth.username);

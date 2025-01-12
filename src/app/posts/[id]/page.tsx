@@ -1,4 +1,4 @@
-import SinglePost from "@/entities/post/ui/SinglePost";
+import SinglePost from "@/features/post/ui/SinglePost";
 
 const PostPage = () => {
   return <SinglePost />;

@@ -1,25 +1,12 @@
 "use client";
 
-import {
-  useAppDispatch,
-  useAppSelector,
-} from "@/app/_providers/StoreProvider/config/hooks";
-
-import { useEffect } from "react";
-import { loadPostsAsync, selectAllPosts } from "../model/slice";
 import NotFoundBadge from "@/shared/ui/NotFoundBadge";
 import ErrorBadge from "@/shared/ui/ErrorBadge";
-import PostItem from "./PostItem";
+import PostItem from "../../../features/post/ui/PostItem";
+import { usePosts } from "../model/usePosts";
 
 export function PostList() {
-  const dispatch = useAppDispatch();
-  const { posts, loading, error, hasLoaded } = useAppSelector(selectAllPosts);
-
-  useEffect(() => {
-    if (!hasLoaded && posts.length === 0) {
-      dispatch(loadPostsAsync());
-    }
-  }, [dispatch, posts.length, hasLoaded]);
+  const { posts, loading, error } = usePosts();
 
   if (loading) {
     return (

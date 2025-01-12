@@ -29,8 +29,9 @@ export default function SignInForm({ redirectTo }: SignInFormProps) {
   const users = useAppSelector(selectAllUsers);
   const dispatch = useAppDispatch();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // move logic to hook/features/auth/model/useSignIn.ts
 
     if (!selectedUser) {
       toast({
@@ -43,6 +44,22 @@ export default function SignInForm({ redirectTo }: SignInFormProps) {
 
     try {
       setIsPending(true);
+      // const formData = new FormData(e.currentTarget);
+      // const email = formData.get("email");
+      // const password = formData.get("password");
+
+      // const response = await fetch("/api/auth/login", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ email, password }),
+      // });
+
+      // if (response.ok) {
+      //   dispatch state & redirect
+      // } else {
+      //   handle error | throw error
+      // }
+
       // Simulate a login process or API call
       toast({
         title: "Login Successful",

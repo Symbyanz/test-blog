@@ -1,33 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
-import {
-  useAppDispatch,
-  useAppSelector,
-} from "@/app/_providers/StoreProvider/config/hooks";
-import { useParams } from "next/navigation";
-import { loadPostsAsync, selectAllPosts } from "../model/slice";
 import NotFoundBadge from "@/shared/ui/NotFoundBadge";
 import ErrorBadge from "@/shared/ui/ErrorBadge";
-import PostAuthor from "./PostAuthor";
-import PostHeader from "./PostHeader";
 import SignInForm from "@/features/auth/ui/SignInForm";
 import SinglePostButtons from "./SinglePostButtons";
-import { selectCurrentUsername } from "@/entities/auth/model/slice";
+import PostHeader from "@/features/post/ui/PostHeader";
+import PostAuthor from "@/features/post/ui/PostAuthor";
+import { useSinglePost } from "../model/useSinglePost";
 
 export default function SinglePost() {
-  const { id } = useParams();
-  const dispatch = useAppDispatch();
-  const { posts, loading, error, hasLoaded } = useAppSelector(selectAllPosts);
-  const post = posts.find((post) => post.id === id);
-  const username = useAppSelector(selectCurrentUsername);
-
-  useEffect(() => {
-    if (!hasLoaded) {
-      dispatch(loadPostsAsync());
-    }
-  }, [dispatch, hasLoaded]);
+  const { post, loading, error, username } = useSinglePost();
 
   if (loading) {
     return (
