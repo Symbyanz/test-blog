@@ -14,9 +14,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/app/_providers/StoreProvider/config/hooks";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Post } from "@/entities/post/model/types";
 import {
   postUpdated,
   loadPostsAsync,
@@ -24,47 +23,67 @@ import {
 } from "@/entities/post/model/slice";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/kit/card";
+import { toast } from "@/shared/lib/react/use-toast";
+import NotFound from "@/shared/ui/NotFoundBadge";
+import ErrorBadge from "@/shared/ui/ErrorBadge";
 
 export default function EditPostForm() {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("");
+  const [banner, setBanner] = useState<File | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
   const { id } = useParams();
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const { posts, loading, error, hasLoaded } = useAppSelector(selectAllPosts);
-  const post = posts.find((post) => post.id === id);
-
-  const [title, setTitle] = useState(post?.title || "");
-  const [content, setContent] = useState(post?.content || "");
-  const [category, setCategory] = useState(post?.category || "General");
-  const [banner, setBanner] = useState<File | null>(null);
-  const [isUploading] = useState(false);
 
   useEffect(() => {
-    if (!hasLoaded && posts.length === 0) {
+    if (!hasLoaded) {
       dispatch(loadPostsAsync());
     }
-  }, [dispatch, posts.length, hasLoaded]);
+  }, [dispatch, hasLoaded]);
 
   useEffect(() => {
-    if (post) {
-      setTitle(post.title);
-      setContent(post.content);
-      setCategory(post.category);
+    if (hasLoaded && posts.length > 0) {
+      const post = posts.find((post) => post.id === id);
+      if (post) {
+        setTitle(post.title);
+        setContent(post.content);
+        setCategory(post.category);
+      }
     }
-  }, [post]);
+  }, [posts, hasLoaded, id]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!post) return;
+    if (!title || !content || !category) {
+      toast({
+        title: "Validation Error",
+        description: "All fields are required.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const updatedPost: Post = {
-      ...post,
-      title,
-      content,
-      category,
-      updatedAt: new Date().toISOString(),
-    };
-    dispatch(postUpdated(updatedPost));
-    router.push(`/posts/${id}`);
+    try {
+      setIsPending(true);
+      dispatch(postUpdated(id as string, { title, content, category }));
+      toast({
+        title: "Post Updated",
+        description: "Your post has been successfully updated.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to create the post.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,28 +101,15 @@ export default function EditPostForm() {
   }
 
   if (error) {
-    return (
-      <section className="flex items-center justify-center h-screen">
-        <div className="p-6 bg-red-100 rounded-lg shadow-md text-center">
-          <h2 className="text-lg font-semibold text-red-700">Error</h2>
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      </section>
-    );
+    return <ErrorBadge title="Error" description={error} />;
   }
 
-  if (!post) {
+  if (!posts.length) {
     return (
-      <section className="flex items-center justify-center h-screen">
-        <div className="p-6 bg-yellow-100 rounded-lg shadow-md text-center">
-          <h2 className="text-lg font-semibold text-yellow-700">
-            Post not found!
-          </h2>
-          <p className="text-sm text-yellow-600">
-            Sorry, the post you&apos;re looking for is not available.
-          </p>
-        </div>
-      </section>
+      <NotFound
+        title="Post not found!"
+        description="Sorry, the post you're looking for are not available."
+      />
     );
   }
 
@@ -118,7 +124,7 @@ export default function EditPostForm() {
             <Input
               name="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value || "")}
               placeholder="Title"
               required
               className="w-full"
@@ -128,7 +134,8 @@ export default function EditPostForm() {
           <div className="col-span-1 md:col-span-1">
             <Select
               name="category"
-              value={category}
+              required
+              defaultValue={category}
               onValueChange={(value) => setCategory(value)}
             >
               <SelectTrigger>
@@ -178,8 +185,8 @@ export default function EditPostForm() {
           </div>
 
           <div className="col-span-2">
-            <Button type="submit" className="w-full" disabled={isUploading}>
-              {isUploading ? "Saving..." : "Save changes"}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Saving..." : "Save changes"}
             </Button>
           </div>
         </form>

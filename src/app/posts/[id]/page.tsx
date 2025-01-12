@@ -1,7 +1,7 @@
-import PostContent from "@/entities/post/ui/PostContent";
+import SinglePost from "@/entities/post/ui/SinglePost";
 
 const PostPage = () => {
-  return <PostContent />;
+  return <SinglePost />;
 };
 
 export default PostPage;

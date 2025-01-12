@@ -2,7 +2,8 @@ export interface Post {
   id: string;
   title: string;
   content: string;
-  author: string;
+  userId: string;
+  metadataId: string;
   category: string;
   createdAt: string;
   updatedAt: string;

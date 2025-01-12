@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, nanoid, PayloadAction } from "@reduxjs/toolkit";
 import { Post, PostsState } from "./types";
 import { loadFromLocalStorage, saveToLocalStorage } from "@/features/localStorage";
 
@@ -23,25 +23,71 @@ const postsSlice = createSlice({
     name: "posts",
     initialState,
     reducers: {
-        postAdded(state, action: PayloadAction<Post>) {
-            state.posts.push(action.payload);
-            saveToLocalStorage("posts", state.posts);
-        },
-        postRemoved(state, action: PayloadAction<string>) {
-            state.posts = state.posts.filter((post) => post.id !== action.payload);
-            saveToLocalStorage("posts", state.posts);
-        },
-        postUpdated(state, action: PayloadAction<Post>) {
-            const { id, title, content, category, updatedAt, banner } = action.payload;
-            const existingPost = state.posts.find(post => post.id === id);
-            if (existingPost) {
-                existingPost.title = title;
-                existingPost.content = content;
-                existingPost.category = category;
-                existingPost.banner = banner;
-                existingPost.updatedAt = updatedAt
+        postAdded: {
+            reducer(state, action: PayloadAction<Post>) {
+                state.posts.push(action.payload);
+                saveToLocalStorage("posts", state.posts);
+            },
+            prepare(
+                title: string,
+                content: string,
+                userId: string,
+                category: string = "General",
+                banner: string = "/600x300.png",
+            ) {
+                const curDate = new Date().toISOString();
+                const postId = nanoid();
+                const metadataId = nanoid();
+                return {
+                    payload: {
+                        id: postId,
+                        title,
+                        content,
+                        userId,
+                        metadataId,
+                        category,
+                        createdAt: curDate,
+                        updatedAt: curDate,
+                        banner,
+                    }
+                }
             }
-        }
+        },
+        postRemoved: {
+            reducer(state, action: PayloadAction<{ postId: string }>) {
+                const { postId } = action.payload;
+                state.posts = state.posts.filter((post) => post.id !== postId);
+                saveToLocalStorage("posts", state.posts);
+            },
+            prepare(postId: string) {
+                return {
+                    payload: {
+                        postId,
+                    }
+                }
+            }
+        },
+        postUpdated: {
+            reducer(state, action: PayloadAction<{ id: string; updates: Partial<Post> }>) {
+                const { id, updates } = action.payload;
+                const existingPost = state.posts.find((post) => post.id === id);
+                if (existingPost) {
+                    Object.assign(existingPost, updates);
+                    saveToLocalStorage("posts", state.posts);
+                }
+            },
+            prepare(id: string, updates: Partial<Omit<Post, "id" | "createdAt" | "updatedAt" | "metadataId">>) {
+                return {
+                    payload: {
+                        id,
+                        updates: {
+                            ...updates,
+                            updatedAt: new Date().toISOString(),
+                        }
+                    }
+                }
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -62,16 +108,12 @@ const postsSlice = createSlice({
                 state.error = action.error.message || "Failed to load posts";
             });
     },
+    selectors: {
+        selectAllPosts: (postsState) => postsState,
+        selectPostById: (postsState, postId: string) => postsState.posts.find(post => post.id === postId),
+    }
 });
 
 export const { postAdded, postRemoved, postUpdated } = postsSlice.actions;
-export const selectAllPosts = createSelector(
-    [(state: { posts: PostsState }) => state.posts],
-    (posts) => posts
-);
-export const selectPostById = createSelector(
-    [(state: { posts: PostsState }) => state.posts.posts,
-    (state: { posts: PostsState }, postId: string) => postId],  // Указываем postId как отдельный аргумент
-    (posts, postId) => posts.find(post => post.id === postId)
-);
+export const { selectAllPosts, selectPostById } = postsSlice.selectors;
 export default postsSlice.reducer;

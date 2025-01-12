@@ -10,16 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/kit/select";
-import { nanoid } from "@reduxjs/toolkit";
-import { useAppDispatch } from "@/app/_providers/StoreProvider/config/hooks";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "@/app/_providers/StoreProvider/config/hooks";
 import { postAdded } from "../model/slice";
-import { Post } from "../model/types";
 import React, { useState } from "react";
 import { toast } from "@/shared/lib/react/use-toast";
+import { selectAllUsers } from "@/entities/user/model/slice";
 
 export default function AddPostForm() {
-  const isPending = false;
+  const [isPending, setIsPending] = useState(false);
   const dispatch = useAppDispatch();
+  const users = useAppSelector(selectAllUsers);
 
   const [, setImageUrl] = useState<string>("");
 
@@ -32,25 +35,43 @@ export default function AddPostForm() {
     }
   };
 
-  const handleSubmit = (formData: FormData) => {
-    const newPost: Post = {
-      id: nanoid(),
-      title: String(formData.get("title")) || "",
-      content: String(formData.get("content")) || "",
-      author: String(formData.get("author")) || "Unknown",
-      category: String(formData.get("category")) || "General",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // banner: imageUrl || "/600x300.png",
-      banner: "/600x300.png",
-    };
-    dispatch(postAdded(newPost));
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-    toast({
-      title: "Post Created",
-      description: "Your post has been successfully created.",
-      variant: "default",
-    });
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get("title") as string;
+    const content = formData.get("content") as string;
+    const author = formData.get("author") as string;
+    const category = formData.get("category") as string;
+
+    if (!title || !content || !author) {
+      toast({
+        title: "Error",
+        description: "title, content and author are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsPending(true);
+      dispatch(postAdded(title, content, author, category));
+      toast({
+        title: "Post Created",
+        description: "Your post has been successfully created.",
+        variant: "default",
+      });
+      e.currentTarget.reset();
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to create the post.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -59,7 +80,7 @@ export default function AddPostForm() {
         <CardTitle>Add new post</CardTitle>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
           <div className="col-span-2">
             <Input
               name="title"
@@ -71,13 +92,18 @@ export default function AddPostForm() {
           </div>
 
           <div className="col-span-2 md:col-span-1">
-            <Input
-              name="author"
-              placeholder="Author"
-              required
-              disabled={isPending}
-              className="w-full"
-            />
+            <Select name="author" disabled={isPending}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select author" />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="col-span-2 md:col-span-1">
@@ -116,12 +142,7 @@ export default function AddPostForm() {
           </div>
 
           <div className="col-span-2">
-            <Button
-              type="submit"
-              formAction={handleSubmit}
-              className="w-full"
-              disabled={isPending}
-            >
+            <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Adding..." : "Add post"}
             </Button>
           </div>

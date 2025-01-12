@@ -1,14 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import {
   useAppDispatch,
   useAppSelector,
 } from "@/app/_providers/StoreProvider/config/hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/kit/card";
-import Link from "next/link";
+
 import { useEffect } from "react";
 import { loadPostsAsync, selectAllPosts } from "../model/slice";
+import NotFoundBadge from "@/shared/ui/NotFoundBadge";
+import ErrorBadge from "@/shared/ui/ErrorBadge";
+import PostItem from "./PostItem";
 
 export function PostList() {
   const dispatch = useAppDispatch();
@@ -38,62 +39,26 @@ export function PostList() {
   }
 
   if (error) {
-    return (
-      <section className="flex flex-col items-center justify-center p-6 bg-red-100 rounded-lg shadow-md text-center">
-        <h2 className="text-lg font-semibold text-red-700">Error</h2>
-        <p className="text-sm text-red-600">{error}</p>
-      </section>
-    );
+    return <ErrorBadge title="Error" description={error} />;
   }
 
   if (!posts.length) {
     return (
-      <section className="flex flex-col items-center justify-center p-6 bg-yellow-100 rounded-lg shadow-md text-center">
-        <h2 className="text-lg font-semibold text-yellow-700">
-          Post not found!
-        </h2>
-        <p className="text-sm text-yellow-600">
-          Sorry, the post you&apos;re looking for is not available.
-        </p>
-      </section>
+      <NotFoundBadge
+        title="Posts not found!"
+        description="Sorry, the posts you're looking for are not available."
+      />
     );
   }
 
+  const orderedPosts = posts
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {posts.map((post) => (
-        <article key={post.id}>
-          <Card className="shadow-md h-full">
-            <CardHeader>
-              <CardTitle className="truncate">
-                <Link href={`/posts/${post.id}`} className="hover:underline">
-                  {post.title.substring(0, 20)}
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {post.banner && (
-                <div
-                  className="mb-4 w-full rounded-md overflow-hidden"
-                  style={{ aspectRatio: "2 / 1" }}
-                >
-                  <Link href={`/posts/${post.id}`}>
-                    <Image
-                      src={post.banner}
-                      alt="Post banner"
-                      width={600}
-                      height={300}
-                      className="object-cover w-full h-full transform transition-transform duration-300 hover:scale-105"
-                    />
-                  </Link>
-                </div>
-              )}
-              <p className="text-sm text-gray-600 line-clamp-3">
-                {post.content.substring(0, 120)}
-              </p>
-            </CardContent>
-          </Card>
-        </article>
+      {orderedPosts.map((post) => (
+        <PostItem key={post.id} post={post} />
       ))}
     </div>
   );
